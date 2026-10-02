@@ -36,7 +36,7 @@ PowerShell, no PC:
 
 ```powershell
 $t = gh auth token
-ssh root@IP_DA_VPS "mkdir -p /opt/infra && cd /opt/infra && curl -fsSL -H 'Authorization: token $t' https://raw.githubusercontent.com/USUARIO/REPO/main/install-infra.sh | bash -s --"
+ssh root@IP_DA_VPS "mkdir -p /opt/infra && cd /opt/infra && curl -fsSL -H 'Authorization: token $t' https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/install-infra.sh | bash -s --"
 ```
 
 ### B) `gh` instalado e logado na VPS
@@ -44,11 +44,10 @@ ssh root@IP_DA_VPS "mkdir -p /opt/infra && cd /opt/infra && curl -fsSL -H 'Autho
 ```bash
 gh auth status || gh auth login
 mkdir -p /opt/infra && cd /opt/infra
-gh api repos/USUARIO/REPO/contents/install-infra.sh \
+gh api repos/Stevanini/stevanini-infra/contents/install-infra.sh?ref=master \
   -H "Accept: application/vnd.github.raw" | bash -s --
 ```
 
-Troque `USUARIO/REPO` pelo repositório real.
 
 ## Opções
 
