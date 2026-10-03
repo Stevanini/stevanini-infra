@@ -8,7 +8,7 @@ Na VPS (Linux com Docker), numa pasta vazia:
 
 ```bash
 mkdir -p /opt/infra && cd /opt/infra
-curl -fsSL https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/install-infra.sh | bash -s --
+curl -fsSL https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/scripts/install-infra.sh | bash -s --
 ```
 
 Ao final, Postgres, Redis e SeaweedFS estão no ar e as credenciais admin ficam em `/opt/infra/.env`.
@@ -45,7 +45,7 @@ Rode sempre de uma pasta própria e vazia (ex.: `/opt/infra`). O script recusa r
 
 ```powershell
 $t = gh auth token
-ssh root@IP_DA_VPS "mkdir -p /opt/infra && cd /opt/infra && curl -fsSL -H 'Authorization: token $t' https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/install-infra.sh | bash -s --"
+ssh root@IP_DA_VPS "mkdir -p /opt/infra && cd /opt/infra && curl -fsSL -H 'Authorization: token $t' https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/scripts/install-infra.sh | bash -s --"
 ```
 
 **B) `gh` na VPS:**
@@ -53,18 +53,18 @@ ssh root@IP_DA_VPS "mkdir -p /opt/infra && cd /opt/infra && curl -fsSL -H 'Autho
 ```bash
 gh auth status || gh auth login
 mkdir -p /opt/infra && cd /opt/infra
-gh api "repos/Stevanini/stevanini-infra/contents/install-infra.sh?ref=master" \
+gh api "repos/Stevanini/stevanini-infra/contents/scripts/install-infra.sh?ref=master" \
   -H "Accept: application/vnd.github.raw" | bash -s --
 ```
 
-**Windows (desenvolvimento local):** use `install-infra.ps1`.
+**Windows (desenvolvimento local):** use `scripts/install-infra.ps1`.
 
 ## Opções
 
 Passe flags após `bash -s --` ou use variáveis de ambiente:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/install-infra.sh \
+curl -fsSL https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/scripts/install-infra.sh \
   | INFRA_PREFIX=minha bash -s -- --db-port=5433 --redis-port=6380 --s3-port=8334
 ```
 
@@ -92,8 +92,8 @@ curl -fsSL https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/in
 
 | Arquivo                     | Função                                                         |
 |-----------------------------|----------------------------------------------------------------|
-| `install-infra.sh`          | Instalador para Linux (VPS)                                    |
-| `install-infra.ps1`         | Equivalente para Windows                                       |
+| `scripts/install-infra.sh`          | Instalador para Linux (VPS)                                    |
+| `scripts/install-infra.ps1`         | Equivalente para Windows                                       |
 | `docker-compose.infra.yml`  | Compose dos serviços (regenerado pelo instalador)              |
 | `.env.example`              | Modelo do `.env`                                               |
 | `.env` *(gerado)*           | Credenciais admin e portas. **Nunca versionar**                |

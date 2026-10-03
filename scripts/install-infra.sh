@@ -22,7 +22,7 @@ if [ -z "${BASH_VERSION:-}" ]; then
 fi
 
 set -euo pipefail
-[ -n "${BASH_SOURCE[0]:-}" ] && cd "$(dirname "${BASH_SOURCE[0]}")"
+[ -n "${BASH_SOURCE[0]:-}" ] && cd "$(dirname "${BASH_SOURCE[0]}")/.."
 
 INFRA_PREFIX="${INFRA_PREFIX:-infra}"
 
