@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
   Equivalente PowerShell do install-infra.sh — sobe a infra compartilhada
-  (Postgres, Redis, SeaweedFS) numa máquina Windows com Docker Desktop.
+  (Postgres, Redis, SeaweedFS, Keycloak) numa máquina Windows com Docker Desktop.
 
 .DESCRIPTION
   Rode uma vez por máquina, numa pasta própria; depois use install-tenant.ps1
@@ -16,7 +16,9 @@
 param(
   [string]$DbPort = "",
   [string]$RedisPort = "",
-  [string]$S3Port = ""
+  [string]$S3Port = "",
+  [string]$KeycloakPort = "",
+  [string]$KeycloakHostname = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -91,6 +93,31 @@ function Initialize-InfraContainer($service, $container) {
   }
 }
 
+# Cria (ou atualiza a senha do) usuário e o banco do Keycloak no Postgres compartilhado.
+# Idempotente; usa o socket local do container, sem senha admin.
+function Initialize-KeycloakDatabase {
+  $db = Get-EnvVar "KEYCLOAK_DB_NAME"; $user = Get-EnvVar "KEYCLOAK_DB_USER"
+  $pass = Get-EnvVar "KEYCLOAK_DB_PASSWORD"; $admin = Get-EnvVar "POSTGRES_ADMIN_USER"
+  $pg = "${InfraPrefix}_postgres"
+  Log "Garantindo banco '$db' e usuário '$user' no Postgres"
+  $role = @"
+DO `$`$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '$user') THEN
+    CREATE ROLE "$user" LOGIN PASSWORD '$pass';
+  ELSE
+    ALTER ROLE "$user" PASSWORD '$pass';
+  END IF;
+END `$`$;
+"@
+  $role | docker exec -i $pg psql -v ON_ERROR_STOP=1 -U $admin -d postgres
+  if ($LASTEXITCODE -ne 0) { throw "Falha ao criar usuário do Keycloak" }
+  $exists = docker exec $pg psql -U $admin -d postgres -tAc "SELECT 1 FROM pg_database WHERE datname='$db'"
+  if ($exists -notmatch "1") {
+    docker exec $pg psql -U $admin -d postgres -c "CREATE DATABASE `"$db`" OWNER `"$user`""
+    if ($LASTEXITCODE -ne 0) { throw "Falha ao criar banco do Keycloak" }
+  }
+}
+
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { throw "'docker' não encontrado. Instale o Docker Desktop." }
 docker compose version *> $null
 if ($LASTEXITCODE -ne 0) { throw "plugin 'docker compose' não encontrado." }
@@ -103,19 +130,29 @@ if (-not $RedisPort) { $RedisPort = Get-EnvVar "REDIS_PORT" }
 if (-not $RedisPort) { $RedisPort = "6379" }
 if (-not $S3Port) { $S3Port = Get-EnvVar "S3_PORT" }
 if (-not $S3Port) { $S3Port = "8333" }
+if (-not $KeycloakPort) { $KeycloakPort = Get-EnvVar "KEYCLOAK_PORT" }
+if (-not $KeycloakPort) { $KeycloakPort = "8080" }
+if (-not $KeycloakHostname) { $KeycloakHostname = Get-EnvVar "KEYCLOAK_HOSTNAME" }
 
 Log "Gerando/atualizando $EnvFile"
 Set-EnvVar "DB_PORT" $DbPort
 Set-EnvVar "REDIS_PORT" $RedisPort
 Set-EnvVar "S3_PORT" $S3Port
+Set-EnvVar "KEYCLOAK_PORT" $KeycloakPort
+Set-EnvVar "KEYCLOAK_HOSTNAME" $KeycloakHostname
 Set-EnvDefault "POSTGRES_ADMIN_USER" "postgres"
 if (-not (Test-EnvVar "POSTGRES_ADMIN_PASSWORD")) { Set-EnvVar "POSTGRES_ADMIN_PASSWORD" (New-Secret) }
+Set-EnvDefault "KEYCLOAK_ADMIN_USER" "admin"
+if (-not (Test-EnvVar "KEYCLOAK_ADMIN_PASSWORD")) { Set-EnvVar "KEYCLOAK_ADMIN_PASSWORD" (New-Secret) }
+Set-EnvDefault "KEYCLOAK_DB_NAME" "keycloak"
+Set-EnvDefault "KEYCLOAK_DB_USER" "keycloak"
+if (-not (Test-EnvVar "KEYCLOAK_DB_PASSWORD")) { Set-EnvVar "KEYCLOAK_DB_PASSWORD" (New-Secret) }
 
 Log "Gerando $InfraCompose"
 $compose = @'
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: __PREFIX___postgres
     restart: unless-stopped
     environment:
@@ -126,7 +163,7 @@ services:
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql
     networks:
       - shared_net
     healthcheck:
@@ -163,6 +200,30 @@ services:
     networks:
       - shared_net
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: __PREFIX___keycloak
+    restart: unless-stopped
+    command: start
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://__PREFIX___postgres:5432/${KEYCLOAK_DB_NAME:-keycloak}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?defina KEYCLOAK_ADMIN_PASSWORD no .env}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
+    networks:
+      - shared_net
+
 networks:
   shared_net:
     external: true
@@ -174,7 +235,7 @@ Log "Criando rede shared_net (se ainda não existir)"
 docker network inspect shared_net *> $null
 if ($LASTEXITCODE -ne 0) { docker network create shared_net | Out-Null }
 
-Log "Subindo infra (Postgres, Redis, SeaweedFS)"
+Log "Subindo infra (Postgres, Redis, SeaweedFS, Keycloak)"
 Initialize-InfraContainer "postgres" "${InfraPrefix}_postgres"
 Initialize-InfraContainer "redis" "${InfraPrefix}_redis"
 Initialize-InfraContainer "seaweedfs" "${InfraPrefix}_seaweedfs"
@@ -188,8 +249,12 @@ for ($i = 0; $i -lt 60; $i++) {
 }
 if ($status -ne "healthy") { throw "Postgres não ficou saudável a tempo (status: $status)." }
 
+Initialize-KeycloakDatabase
+Initialize-InfraContainer "keycloak" "${InfraPrefix}_keycloak"
+
 Write-Host @"
 
-✔ Infra pronta (${InfraPrefix}_postgres, ${InfraPrefix}_redis, ${InfraPrefix}_seaweedfs).
+✔ Infra pronta (${InfraPrefix}_postgres, ${InfraPrefix}_redis, ${InfraPrefix}_seaweedfs, ${InfraPrefix}_keycloak).
+  Keycloak: http://localhost:$KeycloakPort (admin em KEYCLOAK_ADMIN_USER/KEYCLOAK_ADMIN_PASSWORD no .env; leva ~1 min pra subir).
   Agora instale cada loja com install-tenant.ps1, numa pasta própria por loja.
 "@

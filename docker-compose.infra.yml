@@ -1,6 +1,6 @@
 services:
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-alpine
     container_name: infra_postgres
     restart: unless-stopped
     environment:
@@ -11,7 +11,7 @@ services:
     ports:
       - "${DB_PORT:-5432}:5432"
     volumes:
-      - ./data/postgres:/var/lib/postgresql/data
+      - ./data/postgres:/var/lib/postgresql
     networks:
       - shared_net
     healthcheck:
@@ -45,6 +45,30 @@ services:
       - "${S3_PORT:-8333}:8333"
     volumes:
       - ./data/seaweedfs:/data
+    networks:
+      - shared_net
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    container_name: infra_keycloak
+    restart: unless-stopped
+    command: start
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://infra_postgres:5432/${KEYCLOAK_DB_NAME:-keycloak}
+      KC_DB_USERNAME: ${KEYCLOAK_DB_USER:-keycloak}
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN_USER:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?defina KEYCLOAK_ADMIN_PASSWORD no .env}
+      KC_HOSTNAME: ${KEYCLOAK_HOSTNAME:-}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY_HEADERS: xforwarded
+    ports:
+      - "${KEYCLOAK_PORT:-8080}:8080"
     networks:
       - shared_net
 

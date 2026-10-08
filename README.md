@@ -1,6 +1,6 @@
 # stevanini-infra
 
-Infra **compartilhada** para uma VPS: **PostgreSQL 16**, **Redis 7** e **SeaweedFS** (API S3), tudo em Docker Compose e instalado com um único comando. Roda **uma vez por servidor**; cada loja/app é instalada depois pelo `install-tenant.sh` do respectivo repositório, usando a rede `shared_net`.
+Infra **compartilhada** para uma VPS: **PostgreSQL 18**, **Redis 7** e **SeaweedFS** (API S3), tudo em Docker Compose e instalado com um único comando. Roda **uma vez por servidor**; cada loja/app é instalada depois pelo `install-tenant.sh` do respectivo repositório, usando a rede `shared_net`.
 
 ## Início rápido
 
@@ -17,9 +17,10 @@ Ao final, Postgres, Redis e SeaweedFS estão no ar e as credenciais admin ficam 
 
 | Serviço   | Container (`INFRA_PREFIX=infra`) | Porta padrão | Imagem                      |
 |-----------|----------------------------------|--------------|-----------------------------|
-| Postgres  | `infra_postgres`                 | 5432         | `postgres:16-alpine`        |
+| Postgres  | `infra_postgres`                 | 5432         | `postgres:18-alpine`        |
 | Redis     | `infra_redis`                    | 6379         | `redis:7-alpine`            |
 | SeaweedFS | `infra_seaweedfs` (S3)           | 8333         | `chrislusf/seaweedfs:latest`|
+| Keycloak  | `infra_keycloak`                 | 8080         | `quay.io/keycloak/keycloak:26.0` (usa o `infra_postgres`, banco `keycloak`) |
 
 Todos entram na rede Docker externa `shared_net` (criada pelo script se não existir). Apps de outros stacks acessam os serviços pelo nome do container, ex.: `infra_postgres:5432`.
 
@@ -112,6 +113,22 @@ docker exec infra_redis redis-cli ping                                  # deve r
 docker network inspect shared_net                                       # containers conectados
 ```
 
+### Subir serviços individualmente
+
+```bash
+docker compose -f docker-compose.infra.yml up -d postgres   # só o Postgres (idem redis, seaweedfs)
+docker compose -f docker-compose.infra.yml up -d keycloak   # Keycloak (sobe o Postgres junto, se preciso)
+```
+
+O Keycloak usa o `infra_postgres` e precisa que o banco `keycloak` já exista. Os scripts de instalação criam o banco; ao subir só pelo compose num servidor novo, crie-o uma vez:
+
+```bash
+set -a; . ./.env; set +a
+docker exec -i infra_postgres psql -U "$POSTGRES_ADMIN_USER" -d postgres   -c "CREATE ROLE keycloak LOGIN PASSWORD '$KEYCLOAK_DB_PASSWORD'"   -c "CREATE DATABASE keycloak OWNER keycloak"
+```
+
+Sem o banco ou com senha diferente da do `.env`, o Keycloak reinicia em loop; veja o motivo em `docker logs infra_keycloak`.
+
 ## Segurança
 
 > Este repositório é **público**: nunca commite `.env`, senhas ou o conteúdo de `data/`.
@@ -135,6 +152,32 @@ Restaurar:
 ```bash
 gunzip -c backup-AAAA-MM-DD.sql.gz | docker exec -i infra_postgres psql -U postgres
 ```
+
+### Atualizar a versão major do Postgres (dump e restore)
+
+Trocar só a imagem (ex.: 16 → 18) **não funciona** com dados já existentes: o Postgres não sobe com o diretório de dados de outra major. Migre com dump e restore:
+
+```bash
+cd /opt/infra
+mkdir -p data/backup-pg
+# 1. dump completo (todos os bancos e usuários) com o Postgres antigo ainda no ar
+docker exec infra_postgres pg_dumpall -U postgres --quote-all-identifiers > data/backup-pg/dumpall.sql
+
+# 2. parar, guardar os dados antigos como backup e criar a pasta vazia
+docker compose -f docker-compose.infra.yml stop keycloak postgres
+mv data/postgres data/backup-pg/postgres-data && mkdir data/postgres
+
+# 3. trocar a imagem no compose (postgres:18-alpine) e subir o Postgres novo
+docker compose -f docker-compose.infra.yml up -d postgres
+
+# 4. restaurar (o aviso 'role "postgres" already exists' é esperado)
+docker exec -i infra_postgres psql -U postgres -d postgres < data/backup-pg/dumpall.sql
+
+# 5. subir o restante
+docker compose -f docker-compose.infra.yml up -d
+```
+
+A partir do Postgres 18, o volume é montado em `/var/lib/postgresql` (e não `/var/lib/postgresql/data`). Confirme os bancos com `docker exec infra_postgres psql -U postgres -c '\l'` e só apague `data/backup-pg/postgres-data` depois de validar os apps.
 
 ## Solução de problemas
 
