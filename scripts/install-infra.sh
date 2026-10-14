@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Sobe a infra COMPARTILHADA da VPS (Postgres, Redis, SeaweedFS, Keycloak). Rode uma vez
+# Sobe a infra COMPARTILHADA da VPS (Postgres, Valkey, SeaweedFS, Keycloak). Rode uma vez
 # por servidor; depois use install-tenant.sh pra cada loja.
 #
 # Uso: mkdir -p /opt/infra && cd /opt/infra && \
 #      curl -fsSL .../install-infra.sh | bash -s -- [opções]
 # (baixar de repo privado: ver o cabeçalho de install-tenant.sh)
 #
-# Opções: [--db-port=5432] [--redis-port=6379] [--s3-port=8333]
+# Opções: [--db-port=5432] [--valkey-port=6379] [--s3-port=8333]
 #         [--keycloak-port=8080] [--keycloak-hostname=auth.exemplo.com]
 # INFRA_PREFIX (padrão: infra) define os nomes dos containers
-# (<INFRA_PREFIX>_postgres, _redis, _seaweedfs, _keycloak) — nomes genéricos, a infra serve
+# (<INFRA_PREFIX>_postgres, _valkey, _seaweedfs, _keycloak) — nomes genéricos, a infra serve
 # qualquer app; precisa ser o MESMO valor usado no install-tenant.sh.
 #
 # Gera .env (credenciais admin do Postgres), docker-compose.infra.yml e
@@ -38,7 +38,7 @@ ENV_FILE=".env"
 INFRA_COMPOSE="docker-compose.infra.yml"
 
 DB_PORT="5432"
-REDIS_PORT="6379"
+VALKEY_PORT="6379"
 S3_PORT="8333"
 KEYCLOAK_PORT="8080"
 KEYCLOAK_HOSTNAME=""
@@ -91,7 +91,7 @@ ensure_infra_container_up() {
 
 # Manutenção "na mão" (ex.: "chown -R" numa pasta pai) pode trocar o dono dos
 # volumes dos serviços que rodam com usuário próprio no container (Postgres
-# uid 70, Redis uid 999): o processo segue rodando mas perde acesso aos
+# uid 70, Valkey uid 999): o processo segue rodando mas perde acesso aos
 # próprios arquivos e nunca mais volta sozinho. Corrige a cada execução, sem
 # apagar dado. SeaweedFS roda como root, então não sofre disso.
 ensure_data_dir_ownership() {
@@ -128,7 +128,7 @@ SQL
 
 touch "$ENV_FILE"
 v="$(get_env_var "$ENV_FILE" DB_PORT)"; [ -n "$v" ] && DB_PORT="$v"
-v="$(get_env_var "$ENV_FILE" REDIS_PORT)"; [ -n "$v" ] && REDIS_PORT="$v"
+v="$(get_env_var "$ENV_FILE" VALKEY_PORT)"; [ -n "$v" ] && VALKEY_PORT="$v"
 v="$(get_env_var "$ENV_FILE" S3_PORT)"; [ -n "$v" ] && S3_PORT="$v"
 v="$(get_env_var "$ENV_FILE" KEYCLOAK_PORT)"; [ -n "$v" ] && KEYCLOAK_PORT="$v"
 v="$(get_env_var "$ENV_FILE" KEYCLOAK_HOSTNAME)"; [ -n "$v" ] && KEYCLOAK_HOSTNAME="$v"
@@ -136,7 +136,7 @@ v="$(get_env_var "$ENV_FILE" KEYCLOAK_HOSTNAME)"; [ -n "$v" ] && KEYCLOAK_HOSTNA
 for arg in "$@"; do
   case "$arg" in
     --db-port=*) DB_PORT="${arg#*=}" ;;
-    --redis-port=*) REDIS_PORT="${arg#*=}" ;;
+    --valkey-port=*) VALKEY_PORT="${arg#*=}" ;;
     --s3-port=*) S3_PORT="${arg#*=}" ;;
     --keycloak-port=*) KEYCLOAK_PORT="${arg#*=}" ;;
     --keycloak-hostname=*) KEYCLOAK_HOSTNAME="${arg#*=}" ;;
@@ -150,12 +150,14 @@ docker compose version >/dev/null 2>&1 || { echo "Erro: plugin 'docker compose' 
 
 log "Gerando/atualizando $ENV_FILE"
 set_env_var "$ENV_FILE" DB_PORT "$DB_PORT"
-set_env_var "$ENV_FILE" REDIS_PORT "$REDIS_PORT"
+set_env_var "$ENV_FILE" VALKEY_PORT "$VALKEY_PORT"
 set_env_var "$ENV_FILE" S3_PORT "$S3_PORT"
 set_env_var "$ENV_FILE" KEYCLOAK_PORT "$KEYCLOAK_PORT"
 set_env_var "$ENV_FILE" KEYCLOAK_HOSTNAME "$KEYCLOAK_HOSTNAME"
 default_env_var POSTGRES_ADMIN_USER "postgres"
 generate_secret_if_missing POSTGRES_ADMIN_PASSWORD
+default_env_var S3_ACCESS_KEY "infra"
+generate_secret_if_missing S3_SECRET_KEY
 default_env_var KEYCLOAK_ADMIN_USER "admin"
 generate_secret_if_missing KEYCLOAK_ADMIN_PASSWORD
 default_env_var KEYCLOAK_DB_NAME "keycloak"
@@ -186,18 +188,18 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: __PREFIX___redis
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: __PREFIX___valkey
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${VALKEY_PORT:-6379}:6379"
     volumes:
-      - ./data/redis:/data
+      - ./data/valkey:/data
     networks:
       - shared_net
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -206,6 +208,10 @@ services:
     image: chrislusf/seaweedfs:latest
     container_name: __PREFIX___seaweedfs
     restart: unless-stopped
+    environment:
+      # Identidade admin do S3: sem access key/secret válidos, o SeaweedFS recusa as requisições.
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?defina S3_ACCESS_KEY no .env}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?defina S3_SECRET_KEY no .env}
     command: server -dir=/data -s3 -ip.bind=0.0.0.0
     ports:
       - "${S3_PORT:-8333}:8333"
@@ -250,11 +256,11 @@ log "Criando rede shared_net (se ainda não existir)"
 docker network inspect shared_net >/dev/null 2>&1 || docker network create shared_net
 
 ensure_data_dir_ownership "./data/postgres" 70 70   # usuário "postgres" em postgres:18-alpine
-ensure_data_dir_ownership "./data/redis" 999 1000   # usuário "redis" em redis:7-alpine
+ensure_data_dir_ownership "./data/valkey" 999 1000   # usuário "valkey" em valkey/valkey:8-alpine
 
-log "Subindo infra (Postgres, Redis, SeaweedFS, Keycloak)"
+log "Subindo infra (Postgres, Valkey, SeaweedFS, Keycloak)"
 ensure_infra_container_up postgres "${INFRA_PREFIX}_postgres"
-ensure_infra_container_up redis "${INFRA_PREFIX}_redis"
+ensure_infra_container_up valkey "${INFRA_PREFIX}_valkey"
 ensure_infra_container_up seaweedfs "${INFRA_PREFIX}_seaweedfs"
 
 log "Aguardando Postgres aceitar conexões"
@@ -273,7 +279,7 @@ ensure_infra_container_up keycloak "${INFRA_PREFIX}_keycloak"
 
 cat <<EOF
 
-✔ Infra pronta (${INFRA_PREFIX}_postgres, ${INFRA_PREFIX}_redis, ${INFRA_PREFIX}_seaweedfs, ${INFRA_PREFIX}_keycloak).
+✔ Infra pronta (${INFRA_PREFIX}_postgres, ${INFRA_PREFIX}_valkey, ${INFRA_PREFIX}_seaweedfs, ${INFRA_PREFIX}_keycloak).
   Keycloak: http://localhost:${KEYCLOAK_PORT} (admin em KEYCLOAK_ADMIN_USER/KEYCLOAK_ADMIN_PASSWORD no .env; leva ~1 min pra subir).
   Agora instale cada loja com install-tenant.sh, numa pasta própria por loja.
 EOF

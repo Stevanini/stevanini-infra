@@ -20,18 +20,18 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: infra_redis
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: infra_valkey
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${VALKEY_PORT:-6379}:6379"
     volumes:
-      - ./data/redis:/data
+      - ./data/valkey:/data
     networks:
       - shared_net
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,6 +40,10 @@ services:
     image: chrislusf/seaweedfs:latest
     container_name: infra_seaweedfs
     restart: unless-stopped
+    environment:
+      # Identidade admin do S3: sem access key/secret válidos, o SeaweedFS recusa as requisições.
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?defina S3_ACCESS_KEY no .env}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?defina S3_SECRET_KEY no .env}
     command: server -dir=/data -s3 -ip.bind=0.0.0.0
     ports:
       - "${S3_PORT:-8333}:8333"

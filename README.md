@@ -1,6 +1,6 @@
 # stevanini-infra
 
-Infra **compartilhada** para uma VPS: **PostgreSQL 18**, **Redis 7** e **SeaweedFS** (API S3), tudo em Docker Compose e instalado com um único comando. Roda **uma vez por servidor**; cada loja/app é instalada depois pelo `install-tenant.sh` do respectivo repositório, usando a rede `shared_net`.
+Infra **compartilhada** para uma VPS: **PostgreSQL 18**, **Valkey 8** e **SeaweedFS** (API S3), tudo em Docker Compose e instalado com um único comando. Roda **uma vez por servidor**; cada loja/app é instalada depois pelo `install-tenant.sh` do respectivo repositório, usando a rede `shared_net`.
 
 ## Início rápido
 
@@ -11,14 +11,14 @@ mkdir -p /opt/infra && cd /opt/infra
 curl -fsSL https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/scripts/install-infra.sh | bash -s --
 ```
 
-Ao final, Postgres, Redis e SeaweedFS estão no ar e as credenciais admin ficam em `/opt/infra/.env`.
+Ao final, Postgres, Valkey e SeaweedFS estão no ar e as credenciais admin ficam em `/opt/infra/.env`.
 
 ## Serviços
 
 | Serviço   | Container (`INFRA_PREFIX=infra`) | Porta padrão | Imagem                      |
 |-----------|----------------------------------|--------------|-----------------------------|
 | Postgres  | `infra_postgres`                 | 5432         | `postgres:18-alpine`        |
-| Redis     | `infra_redis`                    | 6379         | `redis:7-alpine`            |
+| Valkey    | `infra_valkey`                   | 6379         | `valkey/valkey:8-alpine`    |
 | SeaweedFS | `infra_seaweedfs` (S3)           | 8333         | `chrislusf/seaweedfs:latest`|
 | Keycloak  | `infra_keycloak`                 | 8080         | `quay.io/keycloak/keycloak:26.0` (usa o `infra_postgres`, banco `keycloak`) |
 
@@ -66,13 +66,13 @@ Passe flags após `bash -s --` ou use variáveis de ambiente:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/scripts/install-infra.sh \
-  | INFRA_PREFIX=minha bash -s -- --db-port=5433 --redis-port=6380 --s3-port=8334
+  | INFRA_PREFIX=minha bash -s -- --db-port=5433 --valkey-port=6380 --s3-port=8334
 ```
 
 | Opção                     | Padrão  | Descrição                                             |
 |---------------------------|---------|-------------------------------------------------------|
 | `--db-port=N`             | `5432`  | Porta publicada do Postgres                           |
-| `--redis-port=N`          | `6379`  | Porta publicada do Redis                              |
+| `--valkey-port=N`          | `6379`  | Porta publicada do Valkey                              |
 | `--s3-port=N`             | `8333`  | Porta publicada do S3 (SeaweedFS)                     |
 | `INFRA_PREFIX` (env)      | `infra` | Prefixo dos containers (`minha_postgres`, ...)        |
 
@@ -84,7 +84,7 @@ curl -fsSL https://raw.githubusercontent.com/Stevanini/stevanini-infra/master/sc
 1. Gera/atualiza o `.env` (senha admin do Postgres aleatória, só na primeira vez).
 2. Gera o `docker-compose.infra.yml`.
 3. Cria a rede `shared_net` (se não existir).
-4. Ajusta o dono de `data/postgres` (uid 70) e `data/redis` (uid 999).
+4. Ajusta o dono de `data/postgres` (uid 70) e `data/valkey` (uid 999).
 5. Sobe os três serviços e espera o Postgres ficar saudável.
 
 É **idempotente**: pode rodar de novo para atualizar, trocar porta ou religar um container parado.
@@ -109,14 +109,14 @@ docker compose --env-file .env -f docker-compose.infra.yml logs -f     # logs
 docker compose --env-file .env -f docker-compose.infra.yml pull && \
 docker compose --env-file .env -f docker-compose.infra.yml up -d       # atualizar imagens
 
-docker exec infra_redis redis-cli ping                                  # deve responder PONG
+docker exec infra_valkey valkey-cli ping                                  # deve responder PONG
 docker network inspect shared_net                                       # containers conectados
 ```
 
 ### Subir serviços individualmente
 
 ```bash
-docker compose -f docker-compose.infra.yml up -d postgres   # só o Postgres (idem redis, seaweedfs)
+docker compose -f docker-compose.infra.yml up -d postgres   # só o Postgres (idem valkey, seaweedfs)
 docker compose -f docker-compose.infra.yml up -d keycloak   # Keycloak (sobe o Postgres junto, se preciso)
 ```
 
@@ -133,11 +133,45 @@ Sem o banco ou com senha diferente da do `.env`, o Keycloak reinicia em loop; ve
 
 > Este repositório é **público**: nunca commite `.env`, senhas ou o conteúdo de `data/`.
 
-Por padrão as portas são publicadas em `0.0.0.0` e o Redis não tem senha. Na VPS, restrinja o acesso:
+Por padrão as portas são publicadas em `0.0.0.0` e o Valkey não tem senha. Na VPS, restrinja o acesso:
 
 - firewall: `ufw allow from SEU_IP to any port 5432`; ou
-- bind local no compose: `127.0.0.1:${DB_PORT:-5432}:5432` (idem Redis e S3); ou
+- bind local no compose: `127.0.0.1:${DB_PORT:-5432}:5432` (idem Valkey e S3); ou
 - remova `ports:` dos serviços acessados apenas por containers da `shared_net`.
+
+## Acesso ao S3 (SeaweedFS) com access key
+
+O S3 só aceita requisições assinadas com a access key e a secret key definidas no `.env` (`S3_ACCESS_KEY` e `S3_SECRET_KEY`). Os scripts de instalação geram a secret key aleatória na primeira execução; ao subir só pelo compose, preencha os dois valores antes (ex.: `openssl rand -hex 24`).
+
+As credenciais são repassadas ao container como `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` e dão acesso admin. Para aplicar num servidor já em execução (o container precisa ser recriado):
+
+```bash
+docker compose -f docker-compose.infra.yml up -d --force-recreate seaweedfs
+```
+
+Teste com o AWS CLI (ou qualquer cliente S3, com path-style):
+
+```bash
+set -a; . ./.env; set +a
+export AWS_ACCESS_KEY_ID="$S3_ACCESS_KEY" AWS_SECRET_ACCESS_KEY="$S3_SECRET_KEY" AWS_DEFAULT_REGION=us-east-1
+aws --endpoint-url http://localhost:${S3_PORT:-8333} s3 mb s3://meu-bucket
+aws --endpoint-url http://localhost:${S3_PORT:-8333} s3 ls
+```
+
+Sem as credenciais (ou com chave errada) a resposta é `AccessDenied`. Nos apps, configure endpoint `http://infra_seaweedfs:8333` (dentro da `shared_net`), access key, secret key e *path-style* ligado. Para trocar a chave, edite o `.env` e recrie o container como acima.
+
+### Uma chave por app
+
+A chave do `.env` é admin (acessa tudo). Para cada app, crie uma chave própria restrita ao bucket dele, rodando na pasta da infra:
+
+```bash
+bash s3-add-app.sh loja1 loja1-media     # <app> [bucket]; bucket padrão = nome do app
+# Windows: .\s3-add-app.ps1 -App loja1 -Bucket loja1-media
+```
+
+O script cria o bucket, registra o app com permissão `Read, Write, List, Tagging` **só nesse bucket** e imprime `S3_ENDPOINT`, `S3_BUCKET`, `S3_ACCESS_KEY` e `S3_SECRET_KEY` (uma vez só; guarde no `.env` do app). Vale na hora, sem reiniciar. Rodar de novo para o mesmo app **rotaciona** as chaves. As identidades ficam no filer do SeaweedFS (dentro de `data/seaweedfs`), então entram no backup dessa pasta.
+
+Use a chave admin só para administração; os apps usam a chave do próprio bucket.
 
 ## Backup e restauração
 
@@ -184,6 +218,6 @@ A partir do Postgres 18, o volume é montado em `/var/lib/postgresql` (e não `/
 | Sintoma                                   | Causa provável / solução                                              |
 |-------------------------------------------|-----------------------------------------------------------------------|
 | Script recusa rodar                       | Está dentro do checkout do repo; use uma pasta vazia (`/opt/infra`)   |
-| `port is already allocated`               | Porta em uso; reexecute com `--db-port=`, `--redis-port=` ou `--s3-port=` |
+| `port is already allocated`               | Porta em uso; reexecute com `--db-port=`, `--valkey-port=` ou `--s3-port=` |
 | Postgres reinicia com erro de permissão   | Rode o script de novo (ele corrige o dono de `data/postgres`)         |
 | App não alcança `infra_postgres`          | O container do app precisa estar na rede `shared_net`                 |

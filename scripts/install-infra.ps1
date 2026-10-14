@@ -1,7 +1,7 @@
 <#
 .SYNOPSIS
   Equivalente PowerShell do install-infra.sh — sobe a infra compartilhada
-  (Postgres, Redis, SeaweedFS, Keycloak) numa máquina Windows com Docker Desktop.
+  (Postgres, Valkey, SeaweedFS, Keycloak) numa máquina Windows com Docker Desktop.
 
 .DESCRIPTION
   Rode uma vez por máquina, numa pasta própria; depois use install-tenant.ps1
@@ -15,7 +15,7 @@
 #>
 param(
   [string]$DbPort = "",
-  [string]$RedisPort = "",
+  [string]$ValkeyPort = "",
   [string]$S3Port = "",
   [string]$KeycloakPort = "",
   [string]$KeycloakHostname = ""
@@ -126,8 +126,8 @@ if (-not (Test-Path $EnvFile)) { New-Item -ItemType File -Path $EnvFile | Out-Nu
 
 if (-not $DbPort) { $DbPort = Get-EnvVar "DB_PORT" }
 if (-not $DbPort) { $DbPort = "5432" }
-if (-not $RedisPort) { $RedisPort = Get-EnvVar "REDIS_PORT" }
-if (-not $RedisPort) { $RedisPort = "6379" }
+if (-not $ValkeyPort) { $ValkeyPort = Get-EnvVar "VALKEY_PORT" }
+if (-not $ValkeyPort) { $ValkeyPort = "6379" }
 if (-not $S3Port) { $S3Port = Get-EnvVar "S3_PORT" }
 if (-not $S3Port) { $S3Port = "8333" }
 if (-not $KeycloakPort) { $KeycloakPort = Get-EnvVar "KEYCLOAK_PORT" }
@@ -136,12 +136,14 @@ if (-not $KeycloakHostname) { $KeycloakHostname = Get-EnvVar "KEYCLOAK_HOSTNAME"
 
 Log "Gerando/atualizando $EnvFile"
 Set-EnvVar "DB_PORT" $DbPort
-Set-EnvVar "REDIS_PORT" $RedisPort
+Set-EnvVar "VALKEY_PORT" $ValkeyPort
 Set-EnvVar "S3_PORT" $S3Port
 Set-EnvVar "KEYCLOAK_PORT" $KeycloakPort
 Set-EnvVar "KEYCLOAK_HOSTNAME" $KeycloakHostname
 Set-EnvDefault "POSTGRES_ADMIN_USER" "postgres"
 if (-not (Test-EnvVar "POSTGRES_ADMIN_PASSWORD")) { Set-EnvVar "POSTGRES_ADMIN_PASSWORD" (New-Secret) }
+Set-EnvDefault "S3_ACCESS_KEY" "infra"
+if (-not (Test-EnvVar "S3_SECRET_KEY")) { Set-EnvVar "S3_SECRET_KEY" (New-Secret) }
 Set-EnvDefault "KEYCLOAK_ADMIN_USER" "admin"
 if (-not (Test-EnvVar "KEYCLOAK_ADMIN_PASSWORD")) { Set-EnvVar "KEYCLOAK_ADMIN_PASSWORD" (New-Secret) }
 Set-EnvDefault "KEYCLOAK_DB_NAME" "keycloak"
@@ -172,18 +174,18 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
-    image: redis:7-alpine
-    container_name: __PREFIX___redis
+  valkey:
+    image: valkey/valkey:8-alpine
+    container_name: __PREFIX___valkey
     restart: unless-stopped
     ports:
-      - "${REDIS_PORT:-6379}:6379"
+      - "${VALKEY_PORT:-6379}:6379"
     volumes:
-      - ./data/redis:/data
+      - ./data/valkey:/data
     networks:
       - shared_net
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ["CMD", "valkey-cli", "ping"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -192,6 +194,10 @@ services:
     image: chrislusf/seaweedfs:latest
     container_name: __PREFIX___seaweedfs
     restart: unless-stopped
+    environment:
+      # Identidade admin do S3: sem access key/secret válidos, o SeaweedFS recusa as requisições.
+      AWS_ACCESS_KEY_ID: ${S3_ACCESS_KEY:?defina S3_ACCESS_KEY no .env}
+      AWS_SECRET_ACCESS_KEY: ${S3_SECRET_KEY:?defina S3_SECRET_KEY no .env}
     command: server -dir=/data -s3 -ip.bind=0.0.0.0
     ports:
       - "${S3_PORT:-8333}:8333"
@@ -235,9 +241,9 @@ Log "Criando rede shared_net (se ainda não existir)"
 docker network inspect shared_net *> $null
 if ($LASTEXITCODE -ne 0) { docker network create shared_net | Out-Null }
 
-Log "Subindo infra (Postgres, Redis, SeaweedFS, Keycloak)"
+Log "Subindo infra (Postgres, Valkey, SeaweedFS, Keycloak)"
 Initialize-InfraContainer "postgres" "${InfraPrefix}_postgres"
-Initialize-InfraContainer "redis" "${InfraPrefix}_redis"
+Initialize-InfraContainer "valkey" "${InfraPrefix}_valkey"
 Initialize-InfraContainer "seaweedfs" "${InfraPrefix}_seaweedfs"
 
 Log "Aguardando Postgres aceitar conexões"
@@ -254,7 +260,7 @@ Initialize-InfraContainer "keycloak" "${InfraPrefix}_keycloak"
 
 Write-Host @"
 
-✔ Infra pronta (${InfraPrefix}_postgres, ${InfraPrefix}_redis, ${InfraPrefix}_seaweedfs, ${InfraPrefix}_keycloak).
+✔ Infra pronta (${InfraPrefix}_postgres, ${InfraPrefix}_valkey, ${InfraPrefix}_seaweedfs, ${InfraPrefix}_keycloak).
   Keycloak: http://localhost:$KeycloakPort (admin em KEYCLOAK_ADMIN_USER/KEYCLOAK_ADMIN_PASSWORD no .env; leva ~1 min pra subir).
   Agora instale cada loja com install-tenant.ps1, numa pasta própria por loja.
 "@
