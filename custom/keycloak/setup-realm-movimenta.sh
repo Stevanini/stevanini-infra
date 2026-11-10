@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Cria/atualiza o realm "movimenta" e o client do app (idempotente).
 # Uso: ssh server@192.168.0.200 'docker exec -i infra_keycloak bash -s' < setup-realm-movimenta.sh
-# Usa KC_BOOTSTRAP_ADMIN_* do próprio container. Google/Facebook: ver README (precisam de credenciais próprias).
+# Usa KC_BOOTSTRAP_ADMIN_* do container; se a senha do admin foi trocada, passe KC_ADMIN_USER/KC_ADMIN_PASSWORD (docker exec -e ...). Google/Facebook: ver README (precisam de credenciais próprias).
 set -euo pipefail
 K=/opt/keycloak/bin/kcadm.sh
 R=movimenta
 CLIENT=movimenta-app
 $K config credentials --server http://localhost:8080 --realm master \
-  --user "$KC_BOOTSTRAP_ADMIN_USERNAME" --password "$KC_BOOTSTRAP_ADMIN_PASSWORD" >/dev/null
+  --user "${KC_ADMIN_USER:-$KC_BOOTSTRAP_ADMIN_USERNAME}" --password "${KC_ADMIN_PASSWORD:-$KC_BOOTSTRAP_ADMIN_PASSWORD}" >/dev/null
 
 SETTINGS=(
   -s enabled=true -s displayName=Movimenta
