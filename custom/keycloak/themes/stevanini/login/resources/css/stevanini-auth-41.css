@@ -65,3 +65,7 @@ label,.pf-c-form__label-text,.control-label{position:relative;top:1px}
 .pf-c-button.pf-m-secondary{background:transparent !important;border:0 !important;box-shadow:none;color:#f69702 !important}
 .pf-c-button.pf-m-secondary::after{border:0 !important}
 .pf-c-button.pf-m-secondary:hover,.pf-c-button.pf-m-secondary:focus{background:var(--s-glow) !important}
+/* o Cancelar real do Keycloak é button[name=cancel-aia].btn-default (não .pf-m-secondary) */
+button[name=cancel-aia],.pf-c-button.btn-default{display:block;height:42px;padding:0;background:transparent !important;background-image:none !important;border:0 !important;border-radius:10px;box-shadow:none !important;color:#f69702 !important;font-size:15.744px !important;font-weight:600 !important;text-shadow:none}
+button[name=cancel-aia]::after,.pf-c-button.btn-default::after{border:0 !important}
+button[name=cancel-aia]:hover,button[name=cancel-aia]:focus,.pf-c-button.btn-default:hover,.pf-c-button.btn-default:focus{background:var(--s-glow) !important}
