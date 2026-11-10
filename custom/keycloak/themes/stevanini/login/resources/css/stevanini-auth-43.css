@@ -69,3 +69,5 @@ label,.pf-c-form__label-text,.control-label{position:relative;top:1px}
 button[name=cancel-aia],.pf-c-button.btn-default{display:block;height:42px;padding:0;background:transparent !important;background-image:none !important;border:0 !important;border-radius:10px;box-shadow:none !important;color:#f69702 !important;font-size:15.744px !important;font-weight:600 !important;text-shadow:none}
 button[name=cancel-aia]::after,.pf-c-button.btn-default::after{border:0 !important}
 button[name=cancel-aia]:hover,button[name=cancel-aia]:focus,.pf-c-button.btn-default:hover,.pf-c-button.btn-default:focus{background:var(--s-glow) !important}
+#kc-form-options + #kc-form-buttons{margin-top:20px !important}
+#kc-form-buttons:not(#kc-form-login #kc-form-buttons){margin-top:24px !important}
