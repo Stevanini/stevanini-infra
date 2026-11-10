@@ -1,0 +1,31 @@
+--- docker-compose.yml.bak-stevanini	2026-11-06 16:28:19.790216333 -0300
++++ docker-compose.yml	2026-11-06 16:29:39.808819306 -0300
+@@ -15,15 +15,27 @@
+     container_name: paperless
+     restart: unless-stopped
+     depends_on: [db, broker]
+-    ports: ["8000:8000"]
++    expose: ["8000"]
+     env_file: .env
+     environment:
+       PAPERLESS_REDIS: redis://broker:6379
+       PAPERLESS_DBHOST: db
+       PAPERLESS_APP_TITLE: Stevanini Documents
++      PAPERLESS_APP_LOGO: /logo/stevanini.svg
+       PAPERLESS_DBPASS: ${POSTGRES_PASSWORD}
+     volumes:
+       - /mnt/raid/paperless/data:/usr/src/paperless/data
+       - /mnt/raid/paperless/media:/usr/src/paperless/media
+       - /mnt/raid/paperless/export:/usr/src/paperless/export
+       - /mnt/raid/paperless/consume:/usr/src/paperless/consume
++
++  # Proxy que injeta a marca Stevanini (CSS, favicon, título do login).
++  brand:
++    image: nginx:alpine
++    container_name: paperless-brand
++    restart: unless-stopped
++    depends_on: [webserver]
++    ports: ["8000:80"]
++    volumes:
++      - ./stevanini/nginx.conf:/etc/nginx/conf.d/default.conf:ro
++      - ./stevanini:/stevanini:ro

@@ -1,0 +1,12 @@
+--- docker-compose.yml.bak-stevanini	2026-11-06 14:30:10.455741356 -0300
++++ docker-compose.yml	2026-11-06 14:30:10.459741297 -0300
+@@ -7,7 +7,9 @@
+     volumes:
+       - ${UPLOAD_LOCATION}:/usr/src/app/upload
+       - /etc/localtime:/etc/localtime:ro
++      - ./stevanini:/stevanini:ro
+     env_file: .env
++    command: ["node /stevanini/patch.js; exec start.sh"]
+     ports:
+       - "2283:2283"
+     depends_on: [redis, database]

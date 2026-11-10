@@ -1,0 +1,48 @@
+@font-face{font-family:"Google Sans";src:url(../fonts/GoogleSans.ttf) format("truetype");font-weight:410 900;font-display:swap;ascent-override:106.25%;size-adjust:106.25%}
+.login-pf :not(i):not(.fa):not(.pficon),.card-pf::before{font-family:"Google Sans",Inter,system-ui,sans-serif !important}
+/* Stevanini Auth — mesmo visual do Stevanini Photos */
+:root{--s-bg:#fbf6ec;--s-card:#fff;--s-bd:#f4ecdb;--s-ink:#2b2b2b;--s-soft:#61605b;--s-in:#fbf6ec;--s-inbd:#e6d9bb;--s-glow:#f8b62d33}
+@media (prefers-color-scheme:dark){:root{--s-bg:#211f1a;--s-card:#2b2923;--s-bd:#3a372f;--s-ink:#fbf6ec;--s-soft:#cfc6b0;--s-in:#211f1a;--s-inbd:#4a4639;--s-glow:#f8b62d22}}
+html.login-pf,.login-pf body{background:var(--s-bg) !important;color:var(--s-ink);font-family:Inter,system-ui,sans-serif}
+.login-pf-page{display:flex;flex-direction:column;justify-content:center;min-height:100vh;padding:0}
+/* logo + título dentro do card; some o cabeçalho (logo do Keycloak) */
+#kc-header{display:none}
+.card-pf:has(#kc-form-login) .login-pf-header{display:none}
+.login-pf-page .card-pf{position:relative;width:416px;max-width:calc(100vw - 2rem);margin:0 auto;background:var(--s-card);border:0;border-radius:24px;box-shadow:0 20px 50px rgba(120,90,40,.18);color:var(--s-ink);padding:28px 32px 37px}
+.login-pf-page .card-pf::before{content:"Stevanini Auth";display:block;padding-top:103px;margin-bottom:27px;background:url(../img/bird.svg) top center/auto 96px no-repeat;text-align:center;font-size:1.4rem;font-weight:700;color:var(--s-ink)}
+.login-pf-page .card-pf *{outline:none}
+label,.pf-c-form__label-text,.control-label{color:var(--s-soft);font-size:.85rem}
+/* campos: o próprio <input> leva fundo e borda (igual Photos) */
+input.pf-c-form-control,input[type=text],input[type=password]{background:var(--s-in) !important;color:var(--s-ink) !important;border:1px solid var(--s-inbd) !important;border-radius:12px;height:42px;padding:0 42px 0 12px;box-shadow:none;width:100%;-webkit-text-fill-color:var(--s-ink)}
+input.pf-c-form-control:focus{border-color:#f69702 !important}
+.pf-c-form-control::after,.pf-c-form-control::before{display:none !important}
+input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--s-in) inset !important}
+.pf-c-input-group{position:relative;display:block;background:transparent !important;border:0 !important}
+.pf-c-input-group::before,.pf-c-input-group::after{display:none !important}
+.pf-c-button.pf-m-control{position:absolute;right:0;top:0;height:42px;width:42px;background:transparent;border:0;color:var(--s-soft);padding:0}
+.pf-c-button.pf-m-control::after{display:none}
+.pf-c-button.pf-m-primary{background:linear-gradient(135deg,#f8b62d,#f69702);color:#211f1a;font-weight:600;border:0;border-radius:12px;height:42px;box-shadow:0 8px 22px rgba(246,151,2,.3)}
+.pf-c-button.pf-m-primary:hover,.pf-c-button.pf-m-primary:focus{background:linear-gradient(135deg,#f69702,#f48501)}
+a,#kc-registration a{color:#f8b62d}a:hover{color:#f48501}
+/* mesmos tamanhos do Photos: rótulo 14px/500, campo 14px/400, botão 15,744px/600 */
+label,.pf-c-form__label-text,.control-label{font-size:14px !important;font-weight:500 !important}
+input.pf-c-form-control,input[type=text],input[type=password]{font-size:14px !important;font-weight:400 !important}
+.pf-c-button.pf-m-primary{font-size:15.744px !important;font-weight:600 !important}
+
+/* espaçamento explícito (medido no login do Paperless/Photos): label 21px, campo 42px */
+.form-group{margin:0 0 12px !important;padding:0}
+.form-group > div{margin:0 !important;padding-top:0 !important;padding-bottom:0 !important}
+.pf-c-form__label,label.pf-c-form__label,label{display:block;height:21px;line-height:21px;margin:0 !important;padding:0 !important}
+input.pf-c-form-control{margin:0 !important}
+#kc-form-buttons{margin-top:-12px !important}
+.login-pf-page .card-pf{padding:28px 32px 29px !important}
+/* olho da senha igual ao dos outros apps (SVG fino, 16px) */
+.pf-c-button.pf-m-control i{display:none !important}
+.pf-c-button.pf-m-control::before{content:"";position:absolute;left:50%;top:50%;width:16px;height:16px;margin:-8px 0 0 -8px;background:var(--s-soft);-webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat;mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center/contain no-repeat}
+input.pf-c-form-control,input[type=text],input[type=password],.pf-c-button.pf-m-primary{border-radius:10px !important}
+label,.pf-c-form__label-text,.control-label{position:relative;top:1px}
+.login-pf-page .card-pf{width:max(300px,min(92vw,26rem)) !important;max-width:26rem !important}
+.login-pf-page .card-pf::before{white-space:nowrap;font-size:min(1.4rem,5.6vw)}
+.login-pf-page .card-pf::before{line-height:33px}
+.login-pf-page .card-pf::before{margin-bottom:29px}
+.pf-c-button.pf-m-primary{padding-top:0 !important;padding-bottom:2px !important} /* texto do botão 1px acima, igual aos outros apps */

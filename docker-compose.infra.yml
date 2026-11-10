@@ -73,6 +73,8 @@ services:
       KC_PROXY_HEADERS: xforwarded
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
+    volumes:
+      - ./custom/keycloak/themes/stevanini:/opt/keycloak/themes/stevanini:ro
     networks:
       - shared_net
 

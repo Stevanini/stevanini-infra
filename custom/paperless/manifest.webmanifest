@@ -1,0 +1,27 @@
+{
+  "background_color": "#fbf6ec",
+  "description": "Stevanini Documents",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "name": "Stevanini Documents",
+  "short_name": "Documents",
+  "start_url": "/",
+  "theme_color": "#f69702"
+}
