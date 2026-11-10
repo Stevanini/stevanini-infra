@@ -27,3 +27,8 @@ No servidor os arquivos ficam em `~/workspace/<app>/stevanini/` (Keycloak: `~/in
 - **Título/pássaro:** o título é texto real em Google Sans (SVG como imagem não carrega fonte externa); o pássaro é `stevanini-favicon.svg`.
 - **Keycloak:** realm `master` com `loginTheme`/`adminTheme=stevanini`, `displayName="Stevanini Auth"`, idioma pt-BR (rótulo "E-mail" vem de `messages/messages_pt_BR.properties`).
 - `docker-compose.infra.yml` (raiz do repo) já monta o tema do Keycloak em `./custom/keycloak/themes/stevanini`; o instalador `install-infra.sh` ainda NÃO instala o tema — rode `./deploy.sh keycloak` depois dele.
+
+## Keycloak: tema da tela de conta (account)
+O tema `stevanini` tem `login`, `admin` e `account`. O realm só usa o `account` se o campo estiver preenchido
+(na UI: Realm settings → Themes → Account theme). Sem acesso à UI, direto no banco, depois reiniciar o Keycloak:
+`update realm set account_theme='stevanini' where name in ('master','movimenta');`
