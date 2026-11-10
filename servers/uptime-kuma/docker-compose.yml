@@ -1,0 +1,7 @@
+services:
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    restart: unless-stopped
+    ports: ["3001:3001"]
+    volumes: ["/mnt/raid/uptime-kuma:/app/data", "./index.html:/app/dist/index.html:ro", "./brand/stevanini-icon.svg:/app/dist/stevanini-icon.svg:ro", "./brand/logo-marca.png:/app/dist/stevanini-logo.png:ro"]

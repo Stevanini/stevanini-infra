@@ -1,0 +1,9 @@
+services:
+  web:
+    build: .
+    image: stevanini:latest
+    container_name: stevanini
+    restart: unless-stopped
+    ports:
+      # O nginx do container publica direto na porta 80 do servidor.
+      - "${PORT:-80}:80"
