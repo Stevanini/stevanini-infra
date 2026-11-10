@@ -58,3 +58,6 @@ label,.pf-c-form__label-text,.control-label{position:relative;top:1px}
 .pf-c-button.pf-m-secondary{border:1px solid var(--s-inbd) !important;box-shadow:none}
 .pf-c-button.pf-m-secondary::after{border-color:var(--s-inbd) !important;border-radius:10px}
 #kc-form-options + #kc-form-buttons{margin-top:8px !important}
+/* telas de ação: Cancelar à esquerda, Ok à direita (no HTML o Ok vem primeiro; row-reverse inverte) */
+#kc-form-buttons:not(#kc-form-login #kc-form-buttons){display:flex;flex-direction:row-reverse;gap:10px}
+#kc-form-buttons:not(#kc-form-login #kc-form-buttons) .pf-c-button{flex:1;width:auto;margin:0}
