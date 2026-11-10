@@ -61,3 +61,7 @@ label,.pf-c-form__label-text,.control-label{position:relative;top:1px}
 /* telas de ação: Cancelar à esquerda, Ok à direita (no HTML o Ok vem primeiro; row-reverse inverte) */
 #kc-form-buttons:not(#kc-form-login #kc-form-buttons){display:flex;flex-direction:row-reverse;gap:10px}
 #kc-form-buttons:not(#kc-form-login #kc-form-buttons) .pf-c-button{flex:1;width:auto;margin:0}
+/* Cancelar: botão de texto, sem fundo nem borda, na cor do botão primário */
+.pf-c-button.pf-m-secondary{background:transparent !important;border:0 !important;box-shadow:none;color:#f69702 !important}
+.pf-c-button.pf-m-secondary::after{border:0 !important}
+.pf-c-button.pf-m-secondary:hover,.pf-c-button.pf-m-secondary:focus{background:var(--s-glow) !important}
