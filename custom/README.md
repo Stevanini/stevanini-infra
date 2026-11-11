@@ -31,4 +31,4 @@ No servidor os arquivos ficam em `~/workspace/<app>/stevanini/` (Keycloak: `~/in
 ## Keycloak: tema da tela de conta (account)
 O tema `stevanini` tem `login`, `admin` e `account`. O realm só usa o `account` se o campo estiver preenchido
 (na UI: Realm settings → Themes → Account theme). Sem acesso à UI, direto no banco, depois reiniciar o Keycloak:
-`update realm set account_theme='stevanini' where name in ('master','movimenta');`
+`update realm set account_theme='stevanini' where name in ('master','marketplace');`
