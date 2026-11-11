@@ -1,0 +1,53 @@
+_format_version: "3.0"
+# Rotas do gateway (modo DB-less). Recarregar: docker exec infra_kong kong reload
+# Zitadel (não usado no servidor): ver kong.zitadel.yml
+# No domínio público só o realm marketplace é exposto. Regex do Kong (Rust) não tem lookahead,
+# então: rotas liberadas = regex com regex_priority 10; bloqueio = regex "tudo" com prioridade 0.
+services:
+  # Health check do gateway (Cloudflare/monitoramento): responde 200 sem passar pelo Keycloak
+  - name: healthz
+    url: http://infra_keycloak:8080
+    routes:
+      - name: healthz
+        paths: [/healthz]
+        plugins:
+          - name: request-termination
+            config: {status_code: 200, message: ok}
+      - name: healthz-public
+        hosts: [auth.stevanini.com.br]
+        paths: ['~/healthz$']
+        regex_priority: 10
+        plugins:
+          - name: request-termination
+            config: {status_code: 200, message: ok}
+
+  - name: keycloak
+    url: http://infra_keycloak:8080
+    routes:
+      # LAN: tudo liberado
+      - name: keycloak
+        paths: [/]
+        strip_path: false
+        preserve_host: true
+      # Domínio público: só o realm marketplace (login/OIDC) + estáticos
+      - name: keycloak-public
+        hosts: [auth.stevanini.com.br]
+        paths: ['~/(realms/marketplace|resources|js)(/|$)', '~/robots\.txt$']
+        regex_priority: 10
+        strip_path: false
+        preserve_host: true
+        plugins:
+          # Cloudflare termina o TLS: o Keycloak precisa ver https/443 para montar URLs públicas corretas.
+          # shortcut: sobrescreve variáveis do nginx do Kong 3.8; revisar ao trocar de versão.
+          - name: pre-function
+            config:
+              access:
+                - ngx.var.upstream_x_forwarded_proto = "https"; ngx.var.upstream_x_forwarded_port = "443"
+      # Domínio público: o resto (/admin, master e demais realms) bloqueado
+      - name: keycloak-public-deny
+        hosts: [auth.stevanini.com.br]
+        paths: ['~/']
+        regex_priority: 0
+        plugins:
+          - name: request-termination
+            config: {status_code: 404, message: Not found}

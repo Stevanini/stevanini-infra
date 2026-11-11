@@ -21,6 +21,7 @@ Ao final, Postgres, Valkey e SeaweedFS estão no ar e as credenciais admin ficam
 | Valkey    | `infra_valkey`                   | 6379         | `valkey/valkey:8-alpine`    |
 | SeaweedFS | `infra_seaweedfs` (S3)           | 8333         | `chrislusf/seaweedfs:latest`|
 | Keycloak  | `infra_keycloak`                 | 8080         | `quay.io/keycloak/keycloak:26.0` (usa o `infra_postgres`, banco `keycloak`) |
+| Kong      | `infra_kong`                     | 8000 (proxy), 8001 (admin, só localhost) | `kong:3.8` (DB-less, rotas em `custom/kong/kong.yml`) |
 
 Todos entram na rede Docker externa `shared_net` (criada pelo script se não existir). Apps de outros stacks acessam os serviços pelo nome do container, ex.: `infra_postgres:5432`.
 

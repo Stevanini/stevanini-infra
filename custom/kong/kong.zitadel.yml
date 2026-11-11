@@ -1,0 +1,38 @@
+_format_version: "3.0"
+# Proxy do Zitadel (mesmo domínio): login v2 em /ui/v2/login, API em /api e no resto.
+# Recarregar: docker exec infra_kong kong reload
+# shortcut: sem rota gRPC pura (application/grpc); Connect-RPC/REST funcionam. Adicione se um cliente gRPC precisar.
+# Kong manda X-Forwarded-Host sem a porta; Zitadel/Next.js exigem host:porta (== origin do navegador).
+# shortcut: sobrescreve a variável do nginx direto; revisar se mudar a versão do Kong.
+plugins:
+  - name: pre-function
+    config:
+      access:
+        - ngx.var.upstream_x_forwarded_host = ngx.var.http_host
+services:
+  - name: zitadel-login
+    url: http://zitadel-login:3000
+    routes:
+      - name: zitadel-login
+        paths: [/ui/v2/login]
+        strip_path: false
+        preserve_host: true
+      - name: zitadel-root
+        paths: ["~/$"]
+        preserve_host: true
+        plugins:
+          - name: request-transformer
+            config:
+              replace:
+                uri: /ui/v2/login/
+
+  - name: zitadel-api
+    url: http://zitadel-api:8080
+    routes:
+      - name: zitadel-api-alias
+        paths: [/api]
+        strip_path: true
+        preserve_host: true
+      - name: zitadel-api
+        paths: [/]
+        preserve_host: true
