@@ -4,6 +4,16 @@ services:
     image: ghcr.io/blakeblackshear/frigate:stable
     restart: unless-stopped
     shm_size: 512mb
+    # limites: o Frigate nao pode derrubar o servidor (se estourar, o kernel mata ELE primeiro)
+    mem_limit: 3g
+    memswap_limit: 3g       # sem swap: estourou, reinicia o container em vez de travar o host
+    cpus: 5
+    cpu_shares: 512
+    pids_limit: 1024
+    oom_score_adj: 500
+    logging:
+      driver: json-file
+      options: {max-size: "20m", max-file: "3"}
     env_file: .env
     volumes:
       - /etc/localtime:/etc/localtime:ro

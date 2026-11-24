@@ -124,7 +124,7 @@ if ($LASTEXITCODE -ne 0) { throw "plugin 'docker compose' não encontrado." }
 
 if (-not (Test-Path $EnvFile)) { New-Item -ItemType File -Path $EnvFile | Out-Null }
 
-if (-not $DbPort) { $DbPort = Get-EnvVar "DB_PORT" }
+if (-not $DbPort) { $DbPort = Get-EnvVar "POSTGRES_PORT" }
 if (-not $DbPort) { $DbPort = "5432" }
 if (-not $ValkeyPort) { $ValkeyPort = Get-EnvVar "VALKEY_PORT" }
 if (-not $ValkeyPort) { $ValkeyPort = "6379" }
@@ -135,7 +135,7 @@ if (-not $KeycloakPort) { $KeycloakPort = "8080" }
 if (-not $KeycloakHostname) { $KeycloakHostname = Get-EnvVar "KEYCLOAK_HOSTNAME" }
 
 Log "Gerando/atualizando $EnvFile"
-Set-EnvVar "DB_PORT" $DbPort
+Set-EnvVar "POSTGRES_PORT" $DbPort
 Set-EnvVar "VALKEY_PORT" $ValkeyPort
 Set-EnvVar "S3_PORT" $S3Port
 Set-EnvVar "KEYCLOAK_PORT" $KeycloakPort
@@ -163,7 +163,7 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql
     networks:

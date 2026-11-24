@@ -1,5 +1,10 @@
 services:
   web:
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+    oom_score_adj: 300
     build: .
     image: stevanini:latest
     container_name: stevanini

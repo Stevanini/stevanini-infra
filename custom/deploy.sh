@@ -16,8 +16,7 @@ if want keycloak; then
   scp -q "$FONT" "$SERVER:infra/themes/stevanini/login/resources/fonts/GoogleSans.ttf"
   # o Keycloak cacheia o tema: reiniciar. Se mudar o CSS, troque o nome do arquivo (stevanini-auth-N.css)
   # e o valor de "styles=" em theme.properties, senão o navegador mantém a versão antiga.
-  # tema do realm marketplace: a fonte é o app (mr/app/keycloak-theme/marketplace)
-  rsync -a --delete "${MARKETPLACE_THEME:-$HERE/../../mr/app/keycloak-theme/marketplace/}" "$SERVER:infra/themes/marketplace/"
+  rsync -a --delete "$HERE/keycloak/themes/marketplace/" "$SERVER:infra/themes/marketplace/"
   ssh "$SERVER" 'docker restart infra_keycloak >/dev/null'
 fi
 if want paperless; then

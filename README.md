@@ -137,7 +137,7 @@ Sem o banco ou com senha diferente da do `.env`, o Keycloak reinicia em loop; ve
 Por padrão as portas são publicadas em `0.0.0.0` e o Valkey não tem senha. Na VPS, restrinja o acesso:
 
 - firewall: `ufw allow from SEU_IP to any port 5432`; ou
-- bind local no compose: `127.0.0.1:${DB_PORT:-5432}:5432` (idem Valkey e S3); ou
+- bind local no compose: `127.0.0.1:${POSTGRES_PORT:-5432}:5432` (idem Valkey e S3); ou
 - remova `ports:` dos serviços acessados apenas por containers da `shared_net`.
 
 ## Acesso ao S3 (SeaweedFS) com access key

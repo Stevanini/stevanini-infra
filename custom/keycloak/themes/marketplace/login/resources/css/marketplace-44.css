@@ -1,0 +1,332 @@
+:root {
+  --bg-app: #0D0E12;
+  --bg-card: #16181D;
+  --bd: #2A2D35;
+  --ink: #FFFFFF;
+  --soft: #8E9199;
+  --yellow: #F0CC7A;
+  --blue-gray: #8AA0B6;
+  --grad-logo: linear-gradient(135deg, #F0CC7A, #8AA0B6);
+  --grad-btn: linear-gradient(90deg, #F0CC7A, #8AA0B6);
+  --h: 52px;
+}
+
+html, body {
+  background: var(--bg-app) !important;
+  color: var(--ink);
+  font-family: 'Inter', sans-serif;
+  height: 100%;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-pf-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100%;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 24px 16px !important;
+  box-sizing: border-box !important;
+  background: var(--bg-app) !important;
+}
+
+/* Hide Patternfly / Keycloak header elements */
+#kc-header,
+#kc-locale,
+.login-pf-header,
+.pf-c-button.pf-m-control {
+  display: none !important;
+}
+
+/* Card Container */
+.login-pf-page .card-pf {
+  background: var(--bg-card) !important;
+  border: 1px solid var(--bd) !important;
+  border-radius: 32px !important;
+  padding: 44px 42px !important;
+  width: 480px !important;
+  max-width: calc(100vw - 32px) !important;
+  box-sizing: border-box !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65) !important;
+  margin: 0 auto !important;
+}
+
+/* Header & Logo */
+.login-pf-page .card-pf::before {
+  content: "Marketplace";
+  display: block;
+  padding-top: 92px;
+  margin-bottom: 26px;
+  background: url(../img/logo-4.svg) top center/76px 76px no-repeat;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--ink);
+}
+
+/* Social Buttons (Google) */
+.social-list {
+  list-style: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+.btn-social,
+.btn-social:link,
+.btn-social:visited {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: var(--h) !important;
+  background: #1C1F26 !important;
+  border: 1px solid var(--bd) !important;
+  border-radius: 14px !important;
+  color: #FFFFFF !important;
+  text-decoration: none !important;
+  font-weight: 600 !important;
+  font-size: 15px !important;
+  margin-bottom: 24px !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  gap: 12px !important;
+}
+.btn-social:hover,
+.btn-social:focus,
+.btn-social:active {
+  background: #252932 !important;
+  border-color: #3E4452 !important;
+  color: #FFFFFF !important;
+  text-decoration: none !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important;
+  outline: none !important;
+}
+.btn-social span,
+.btn-social:hover span,
+.btn-social:focus span,
+.btn-social:active span {
+  color: #FFFFFF !important;
+  text-decoration: none !important;
+}
+
+/* Divider */
+.divider { display: flex; align-items: center; margin: 20px 0; }
+.line { flex: 1; height: 1px; background: #2A2D35; }
+.dividerText { padding: 0 16px; color: var(--soft); font-size: 14px; font-weight: 500; }
+
+/* Fields */
+.form-field { margin-bottom: 22px; }
+.form-field label { display: block; color: var(--soft); margin-bottom: 10px; font-size: 14px; font-weight: 500; }
+.form-field input {
+  width: 100% !important;
+  height: var(--h) !important;
+  background: #0D0E12 !important;
+  border: 1px solid var(--bd) !important;
+  border-radius: 14px !important;
+  color: var(--ink) !important;
+  padding: 0 18px !important;
+  box-sizing: border-box !important;
+  font-size: 16px !important;
+  outline: none !important;
+}
+.form-field input:focus { border-color: var(--yellow) !important; }
+
+/* Options */
+.form-options { margin-bottom: 32px; display: flex; flex-direction: column; gap: 12px; }
+.remember-me { display: flex; align-items: center; gap: 10px; }
+.remember-me input {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  flex: none;
+  width: 22px !important;
+  height: 22px !important;
+  background: #111317 center / 14px 14px no-repeat !important;
+  border: 1.5px solid #353B48 !important;
+  border-radius: 7px !important;
+  cursor: pointer;
+  margin: 0 !important;
+  padding: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+.remember-me input:focus-visible { border-color: var(--yellow) !important; }
+.remember-me input:checked {
+  background-color: var(--yellow) !important;
+  border-color: var(--yellow) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M2.5 7.5l3 3 6-7' fill='none' stroke='%2316181D' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
+.remember-me input:checked::after, .remember-me input::after, .remember-me input::before { content: none !important; display: none !important; }
+.remember-me label { color: var(--soft); font-size: 14px; cursor: pointer; user-select: none; }
+.forgot-pwd a { color: var(--yellow); text-decoration: none; font-weight: 600; font-size: 15px; }
+
+/* Main Button */
+.action-btn button {
+  width: 100% !important;
+  height: var(--h) !important;
+  background: var(--grad-btn) !important;
+  border: none !important;
+  border-radius: 14px !important;
+  color: #000000 !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  cursor: pointer !important;
+  transition: opacity 0.2s;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.action-btn button:hover { opacity: 0.9; }
+
+/* Footer */
+.form-footer {
+  margin-top: 35px;
+  padding-top: 25px;
+  border-top: 1px solid #2A2D35;
+  text-align: center;
+  font-size: 15px;
+  color: var(--soft);
+}
+.form-footer a { color: var(--yellow); text-decoration: none; font-weight: 700; margin-left: 6px; }
+
+/* Alerts / Error feedback */
+.alert, #kc-error-message, .alert-error {
+  background: rgba(239, 68, 68, 0.12) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  border-radius: 14px !important;
+  color: #FCA5A5 !important;
+  padding: 12px 16px !important;
+  margin-bottom: 20px !important;
+  font-size: 14px !important;
+  text-align: center !important;
+}
+
+/* Telas do template base (cadastro, completar cadastro, recuperar senha...): mesmo visual do login */
+.login-pf-page .card-pf .login-pf-header { text-align: center; margin: 0 0 8px; }
+.login-pf-page .card-pf h1#kc-page-title { color: var(--ink) !important; font-size: 22px !important; font-weight: 700 !important; margin: 0 0 6px !important; text-align: center; }
+.login-pf-page .card-pf .subtitle, .login-pf-page .card-pf .subtitle * { color: var(--soft) !important; font-size: 13px !important; text-align: center; padding: 0 !important; }
+.login-pf-page .card-pf .col-md-10, .login-pf-page .card-pf [class*="col-xs-12"] { width: 100% !important; float: none !important; padding-left: 0 !important; padding-right: 0 !important; }
+.login-pf-page .card-pf .form-horizontal .form-group { margin-left: 0 !important; margin-right: 0 !important; margin-bottom: 22px !important; }
+.login-pf-page .card-pf .pf-c-form__label, .login-pf-page .card-pf .pf-c-form__label-text, .login-pf-page .card-pf label { color: var(--soft) !important; font-size: 14px !important; font-weight: 500 !important; display: inline-block; margin-bottom: 10px; }
+.login-pf-page .card-pf .required { color: var(--yellow) !important; }
+.login-pf-page .card-pf input.pf-c-form-control, .login-pf-page .card-pf select.pf-c-form-control, .login-pf-page .card-pf textarea.pf-c-form-control {
+  width: 100% !important; height: var(--h) !important; box-sizing: border-box !important;
+  background: #0D0E12 !important; color: var(--ink) !important;
+  border: 1px solid var(--bd) !important; border-radius: 14px !important;
+  padding: 0 18px !important; font-size: 16px !important; box-shadow: none !important; outline: none !important;
+}
+.login-pf-page .card-pf textarea.pf-c-form-control { height: auto !important; padding: 14px 18px !important; }
+.login-pf-page .card-pf input.pf-c-form-control::placeholder { color: #5A5E69 !important; }
+.login-pf-page .card-pf input.pf-c-form-control:focus, .login-pf-page .card-pf select.pf-c-form-control:focus { border-color: var(--yellow) !important; }
+.login-pf-page .card-pf input.pf-c-form-control[aria-invalid="true"] { border-color: rgba(239, 68, 68, 0.6) !important; }
+.login-pf-page .card-pf .pf-c-input-group { display: block; background: transparent !important; border: 0 !important; }
+.login-pf-page .card-pf .form-group:has(> #kc-form-buttons) { display: flex !important; flex-direction: column; margin-bottom: 0 !important; }
+.login-pf-page .card-pf #kc-form-buttons { order: 1; margin-top: 14px !important; }
+.login-pf-page .card-pf #kc-form-options { order: 2; margin-top: 20px !important; }
+.login-pf-page .card-pf .pf-c-button.pf-m-primary, .login-pf-page .card-pf input[type=submit].pf-c-button {
+  width: 100% !important; height: var(--h) !important; background: var(--grad-btn) !important; border: 0 !important;
+  border-radius: 14px !important; color: #000 !important; font-size: 18px !important; font-weight: 700 !important; box-shadow: none !important;
+}
+.login-pf-page .card-pf .pf-c-button.pf-m-secondary, .login-pf-page .card-pf .pf-c-button.btn-default, .login-pf-page .card-pf button[name=cancel-aia] {
+  width: 100% !important; height: var(--h) !important; background: transparent !important; border: 1px solid var(--bd) !important;
+  border-radius: 14px !important; color: var(--yellow) !important; font-weight: 600 !important; margin-top: 12px;
+}
+.login-pf-page .card-pf #kc-form-options { text-align: center; }
+.login-pf-page .card-pf #kc-form-options a, .login-pf-page .card-pf a { color: var(--yellow) !important; text-decoration: none; font-weight: 600; }
+.login-pf-page .card-pf .kc-feedback-text, .login-pf-page .card-pf .pf-c-form__helper-text { color: #FCA5A5 !important; font-size: 13px !important; }
+
+/* Mobile: sem card, o conteúdo direto na tela com a cor do card */
+@media (max-width: 480px) {
+  html, body, .login-pf-page { background: var(--bg-card) !important; }
+  html, body { width: 100% !important; display: block !important; height: auto !important; min-height: 100dvh; }
+  .login-pf-page { padding: 24px 16px !important; justify-content: flex-start !important; }
+  .login-pf-page .card-pf {
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  #kc-content, #kc-content-wrapper, #kc-form-wrapper, #kc-form-login { padding-left: 0 !important; padding-right: 0 !important; margin-left: 0 !important; margin-right: 0 !important; width: 100% !important; max-width: none !important; }
+}
+
+/* Aviso do login (usuário/senha inválidos): logo abaixo do botão Entrar */
+.form-message { margin: 16px 0 0 !important; }
+
+/* Correções da revisão das telas */
+.login-pf-page .card-pf #kc-info, .login-pf-page .card-pf #kc-info-wrapper { margin: 0 !important; padding: 0 !important; width: 100% !important; max-width: 100% !important; box-sizing: border-box; background: transparent !important; }
+.login-pf-page .card-pf #kc-info { margin-top: 28px !important; padding-top: 20px !important; border-top: 1px solid var(--bd) !important; text-align: center; }
+.login-pf-page .card-pf #kc-info-wrapper, .login-pf-page .card-pf #kc-info span { color: var(--soft) !important; font-size: 14px; line-height: 1.6; }
+.remember-me label { margin: 0 !important; display: block; line-height: 22px; }
+/* avisos por tipo (o padrão acima é o de erro) */
+.alert-success { background: rgba(34, 197, 94, 0.12) !important; border-color: rgba(34, 197, 94, 0.4) !important; color: #86EFAC !important; }
+.alert-info { background: rgba(138, 160, 182, 0.14) !important; border-color: rgba(138, 160, 182, 0.4) !important; color: #C9D6E3 !important; }
+.alert-warning { background: rgba(240, 204, 122, 0.12) !important; border-color: rgba(240, 204, 122, 0.4) !important; color: var(--yellow) !important; }
+.login-pf-page .card-pf #kc-info-wrapper { border: 0 !important; }
+
+/* Botão principal mais perto do último campo */
+.login-pf-page .card-pf .form-group:has(+ .form-group > #kc-form-buttons) { margin-bottom: 6px !important; }
+/* Asterisco de campo obrigatório em vermelho: ele é texto solto ao lado do <label>, então a cor vem do contêiner */
+.login-pf-page .card-pf .form-group > div:first-child, .login-pf-page .card-pf .required { color: #F87171 !important; font-size: 14px; }
+
+/* Autofill do navegador pinta o campo de branco/azul: cobrir com sombra interna da cor do input */
+.form-field input:-webkit-autofill,
+.form-field input:-webkit-autofill:hover,
+.form-field input:-webkit-autofill:focus,
+.form-field input:-webkit-autofill:active,
+.login-pf-page .card-pf input.pf-c-form-control:-webkit-autofill,
+.login-pf-page .card-pf input.pf-c-form-control:-webkit-autofill:hover,
+.login-pf-page .card-pf input.pf-c-form-control:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #0D0E12 inset !important;
+  box-shadow: 0 0 0 1000px #0D0E12 inset !important;
+  -webkit-text-fill-color: var(--ink) !important;
+  caret-color: var(--ink) !important;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+/* O texto do campo em foco/autofill voltava a preto (cor padrão do navegador): fixa a cor em qualquer estado */
+.form-field input, .form-field input:focus, .form-field input:-webkit-autofill, .form-field input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--ink) !important; color: var(--ink) !important; caret-color: var(--ink) !important;
+}
+/* pré-visualização/preenchimento do Chrome ignora color no input; ::first-line é a brecha que ele respeita */
+.form-field input:-webkit-autofill::first-line, .form-field input:autofill::first-line { color: var(--ink) !important; font-size: 16px; }
+
+/* Tela "escolher método" (first-broker-login / select-authenticator): títulos azuis e bordas brancas sumiam no tema escuro */
+.select-auth-container { display: flex; flex-direction: column; gap: 12px; }
+.select-auth-box-parent {
+  display: flex; align-items: center; gap: 14px; width: 100%; text-align: left;
+  background: transparent !important; color: var(--ink) !important;
+  border: 1px solid var(--bd) !important; border-radius: 14px; padding: 14px 16px; cursor: pointer;
+}
+.select-auth-box-parent:hover, .select-auth-box-parent:focus-visible { border-color: var(--yellow) !important; outline: none; }
+.select-auth-box-icon { flex: none; padding: 0 !important; }
+.select-auth-box-icon i, .select-auth-box-icon-properties { color: var(--yellow) !important; font-size: 20px !important; }
+.select-auth-box-headline, .select-auth-box-headline.pf-c-title { color: var(--ink) !important; font-size: 16px; font-weight: 600; }
+.select-auth-box-desc { color: var(--soft) !important; font-size: 13px; line-height: 1.4; padding: 0 !important; }
+.select-auth-box-arrow, .select-auth-box-parent .fa-angle-right { color: var(--soft) !important; }
+
+/* -webkit-text-fill-color do campo (regra acima) também pintava o placeholder de branco */
+.form-field input::placeholder, .login-pf-page .card-pf input.pf-c-form-control::placeholder {
+  color: #5A5E69 !important; -webkit-text-fill-color: #5A5E69 !important; opacity: 1;
+}
+
+/* Card compacto: só os botões; o formulário de e-mail abre ao clicar em "Entrar com e-mail" */
+#kc-form-wrapper:not(.email-open) #kc-form-login { display: none; }
+#kc-form-wrapper.email-open #open-email-login { display: none !important; }
+.btn-social { margin-bottom: 14px !important; width: 100%; font-family: inherit; }
+.social-list { margin-bottom: 0 !important; }
+
+/* html/body centralizavam com height:100%: ao abrir o formulário o card passava da tela e o topo (Google/Facebook) ficava cortado, sem scroll. O centramento vertical continua no .login-pf-page (min-height:100dvh). */
+html, body { height: auto !important; min-height: 100%; align-items: flex-start !important; }
+
+#kc-form-wrapper:not(.email-open) #close-email-login { display: none !important; }
+#kc-form-wrapper.email-open #kc-social-providers { display: none; }
+.back-link { text-align: left; font-size: 15px; margin-bottom: 22px; }
+.back-link a { color: var(--yellow); text-decoration: none; font-weight: 700; }

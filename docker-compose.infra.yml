@@ -1,5 +1,10 @@
 services:
   postgres:
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1
+    pids_limit: 256
+    oom_score_adj: 300
     image: postgres:18-alpine
     container_name: infra_postgres
     restart: unless-stopped
@@ -9,7 +14,7 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql
     networks:
@@ -21,6 +26,11 @@ services:
       retries: 5
 
   valkey:
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 128
+    oom_score_adj: 300
     image: valkey/valkey:8-alpine
     container_name: infra_valkey
     restart: unless-stopped
@@ -37,6 +47,11 @@ services:
       retries: 5
 
   seaweedfs:
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1
+    pids_limit: 256
+    oom_score_adj: 300
     image: chrislusf/seaweedfs:latest
     container_name: infra_seaweedfs
     restart: unless-stopped
@@ -53,6 +68,11 @@ services:
       - shared_net
 
   keycloak:
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 2
+    pids_limit: 512
+    oom_score_adj: 300
     image: quay.io/keycloak/keycloak:26.0
     container_name: infra_keycloak
     restart: unless-stopped
@@ -71,21 +91,32 @@ services:
       KC_HOSTNAME_STRICT: "false"
       KC_HTTP_ENABLED: "true"
       KC_PROXY_HEADERS: xforwarded
+      KC_SPI_THEME_CACHE_THEMES: "false"
+      KC_SPI_THEME_CACHE_TEMPLATES: "false"
+      KC_SPI_THEME_STATIC_MAX_AGE: "-1"
     ports:
       - "${KEYCLOAK_PORT:-8080}:8080"
     volumes:
       - ./custom/keycloak/themes/stevanini:/opt/keycloak/themes/stevanini:ro
       - ./custom/keycloak/themes/marketplace:/opt/keycloak/themes/marketplace:ro
+      # Login com Apple: 1.14.0 é a versão para Keycloak 25.0 a 26.2 (ver README da extensão ao subir o Keycloak)
+      - ./custom/keycloak/providers/apple-identity-provider-1.14.0.jar:/opt/keycloak/providers/apple-identity-provider-1.14.0.jar:ro
     networks:
       - shared_net
 
   kong:
+    mem_limit: 1g
+    memswap_limit: 1g
+    cpus: 1
+    pids_limit: 256
+    oom_score_adj: 300
     image: kong:3.8
     container_name: infra_kong
     restart: unless-stopped
     environment:
       # DB-less: rotas vêm de custom/kong/kong.yml (recarregue com `docker exec infra_kong kong reload`).
       KONG_DATABASE: "off"
+      KONG_NGINX_WORKER_PROCESSES: "2"  # padrao=auto=28 workers=~1,8GB de RAM
       KONG_DECLARATIVE_CONFIG: /kong/kong.yml
       KONG_PROXY_LISTEN: 0.0.0.0:8000
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
@@ -100,6 +131,9 @@ services:
       - "127.0.0.1:${KONG_ADMIN_PORT:-8001}:8001"
     volumes:
       - ./custom/kong/kong.yml:/kong/kong.yml:ro
+    # sockets em tmpfs: um desligamento brusco deixava o socket velho e o Kong entrava em loop (bind 98)
+    tmpfs:
+      - /usr/local/kong/sockets:mode=1777
     networks:
       - shared_net
     healthcheck:
@@ -109,6 +143,11 @@ services:
       retries: 5
 
   zitadel-api:
+    mem_limit: 768m
+    memswap_limit: 768m
+    cpus: 1
+    pids_limit: 256
+    oom_score_adj: 300
     image: ghcr.io/zitadel/zitadel:${ZITADEL_VERSION:-v4.16.0}
     container_name: infra_zitadel_api
     restart: unless-stopped
@@ -154,6 +193,11 @@ services:
       start_period: 20s
 
   zitadel-login:
+    mem_limit: 384m
+    memswap_limit: 384m
+    cpus: 0.5
+    pids_limit: 128
+    oom_score_adj: 300
     image: ghcr.io/zitadel/zitadel-login:${ZITADEL_VERSION:-v4.16.0}
     container_name: infra_zitadel_login
     restart: unless-stopped

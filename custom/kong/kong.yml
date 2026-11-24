@@ -14,7 +14,7 @@ services:
           - name: request-termination
             config: {status_code: 200, message: ok}
       - name: healthz-public
-        hosts: [auth.stevanini.com.br]
+        hosts: [gateway.stevanini.com.br, auth.stevanini.com.br]
         paths: ['~/healthz$']
         regex_priority: 10
         plugins:
@@ -31,7 +31,7 @@ services:
         preserve_host: true
       # Domínio público: só o realm marketplace (login/OIDC) + estáticos
       - name: keycloak-public
-        hosts: [auth.stevanini.com.br]
+        hosts: [gateway.stevanini.com.br, auth.stevanini.com.br]
         paths: ['~/(realms/marketplace|resources|js)(/|$)', '~/robots\.txt$']
         regex_priority: 10
         strip_path: false
@@ -45,9 +45,20 @@ services:
                 - ngx.var.upstream_x_forwarded_proto = "https"; ngx.var.upstream_x_forwarded_port = "443"
       # Domínio público: o resto (/admin, master e demais realms) bloqueado
       - name: keycloak-public-deny
-        hosts: [auth.stevanini.com.br]
+        hosts: [gateway.stevanini.com.br, auth.stevanini.com.br]
         paths: ['~/']
         regex_priority: 0
         plugins:
           - name: request-termination
             config: {status_code: 404, message: Not found}
+
+  # API do marketplace (backend NestJS rodando no notebook de dev). Só no domínio público; o backend
+  # exige token válido (401 sem ele). shortcut: IP fixo do notebook, trocar por container no servidor.
+  - name: marketplace-api
+    url: http://192.168.0.204:3000
+    routes:
+      - name: marketplace-api-public
+        hosts: [gateway.stevanini.com.br, auth.stevanini.com.br]
+        paths: ['~/(me|users|states|logout)(/|$)']
+        regex_priority: 10
+        strip_path: false

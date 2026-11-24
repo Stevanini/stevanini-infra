@@ -1,5 +1,10 @@
 services:
   uptime-kuma:
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 0.5
+    pids_limit: 256
+    oom_score_adj: 300
     image: louislam/uptime-kuma:2
     container_name: uptime-kuma
     restart: unless-stopped

@@ -1,8 +1,18 @@
 services:
   broker:
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 128
+    oom_score_adj: 300
     image: redis:8
     restart: unless-stopped
   db:
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1
+    pids_limit: 256
+    oom_score_adj: 300
     image: postgres:17
     restart: unless-stopped
     environment:
@@ -11,6 +21,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes: ["/mnt/raid/paperless/db:/var/lib/postgresql/data"]
   webserver:
+    mem_limit: 1280m
+    memswap_limit: 1280m
+    cpus: 3
+    pids_limit: 512
+    oom_score_adj: 300
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     container_name: paperless
     restart: unless-stopped
@@ -31,6 +46,11 @@ services:
 
   # Proxy que injeta a marca Stevanini (CSS, favicon, título do login).
   brand:
+    mem_limit: 64m
+    memswap_limit: 64m
+    cpus: 0.25
+    pids_limit: 64
+    oom_score_adj: 300
     image: nginx:alpine
     container_name: paperless-brand
     restart: unless-stopped

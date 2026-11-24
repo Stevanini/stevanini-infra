@@ -37,7 +37,7 @@ fi
 ENV_FILE=".env"
 INFRA_COMPOSE="docker-compose.infra.yml"
 
-DB_PORT="5432"
+POSTGRES_PORT="5432"
 VALKEY_PORT="6379"
 S3_PORT="8333"
 KEYCLOAK_PORT="8080"
@@ -127,7 +127,7 @@ SQL
 }
 
 touch "$ENV_FILE"
-v="$(get_env_var "$ENV_FILE" DB_PORT)"; [ -n "$v" ] && DB_PORT="$v"
+v="$(get_env_var "$ENV_FILE" POSTGRES_PORT)"; [ -n "$v" ] && POSTGRES_PORT="$v"
 v="$(get_env_var "$ENV_FILE" VALKEY_PORT)"; [ -n "$v" ] && VALKEY_PORT="$v"
 v="$(get_env_var "$ENV_FILE" S3_PORT)"; [ -n "$v" ] && S3_PORT="$v"
 v="$(get_env_var "$ENV_FILE" KEYCLOAK_PORT)"; [ -n "$v" ] && KEYCLOAK_PORT="$v"
@@ -135,7 +135,7 @@ v="$(get_env_var "$ENV_FILE" KEYCLOAK_HOSTNAME)"; [ -n "$v" ] && KEYCLOAK_HOSTNA
 
 for arg in "$@"; do
   case "$arg" in
-    --db-port=*) DB_PORT="${arg#*=}" ;;
+    --db-port=*) POSTGRES_PORT="${arg#*=}" ;;
     --valkey-port=*) VALKEY_PORT="${arg#*=}" ;;
     --s3-port=*) S3_PORT="${arg#*=}" ;;
     --keycloak-port=*) KEYCLOAK_PORT="${arg#*=}" ;;
@@ -149,7 +149,7 @@ require_cmd openssl
 docker compose version >/dev/null 2>&1 || { echo "Erro: plugin 'docker compose' não encontrado." >&2; exit 1; }
 
 log "Gerando/atualizando $ENV_FILE"
-set_env_var "$ENV_FILE" DB_PORT "$DB_PORT"
+set_env_var "$ENV_FILE" POSTGRES_PORT "$POSTGRES_PORT"
 set_env_var "$ENV_FILE" VALKEY_PORT "$VALKEY_PORT"
 set_env_var "$ENV_FILE" S3_PORT "$S3_PORT"
 set_env_var "$ENV_FILE" KEYCLOAK_PORT "$KEYCLOAK_PORT"
@@ -177,7 +177,7 @@ services:
       POSTGRES_DB: postgres
       POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
     ports:
-      - "${DB_PORT:-5432}:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - ./data/postgres:/var/lib/postgresql
     networks:
