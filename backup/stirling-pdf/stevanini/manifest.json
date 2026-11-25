@@ -1,0 +1,20 @@
+{
+  "short_name": "Document Editor",
+  "name": "Stevanini Document Editor",
+  "icons": [
+    {
+      "src": "modern-logo/logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "modern-logo/logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#f69702",
+  "background_color": "#fbf6ec"
+}

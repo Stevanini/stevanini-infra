@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=EasyEffects (atrasado)
+Comment=Inicia o EasyEffects 15s depois do login, com o áudio padrão já estável
+Exec=sh -c "sleep 15 && exec easyeffects --gapplication-service"
+X-GNOME-Autostart-enabled=true
+NoDisplay=true
