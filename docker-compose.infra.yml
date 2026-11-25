@@ -142,6 +142,43 @@ services:
       timeout: 5s
       retries: 5
 
+  # Telemetria de erros (protocolo Sentry). Modo all-in-one: web + worker num só container; banco no postgres compartilhado e fila/cache no Valkey (db 1).
+  # Antes do primeiro start crie o banco (README, seção GlitchTip). Migrations rodam sozinhas na partida.
+  glitchtip:
+    mem_limit: 512m
+    memswap_limit: 512m
+    cpus: 1
+    pids_limit: 256
+    oom_score_adj: 300
+    image: glitchtip/glitchtip:${GLITCHTIP_VERSION:-latest}
+    container_name: infra_glitchtip
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${GLITCHTIP_DB_USER:-glitchtip}:${GLITCHTIP_DB_PASSWORD:?defina GLITCHTIP_DB_PASSWORD no .env}@infra_postgres:5432/${GLITCHTIP_DB_NAME:-glitchtip}
+      VALKEY_URL: redis://infra_valkey:6379/1
+      SECRET_KEY: ${GLITCHTIP_SECRET_KEY:?defina GLITCHTIP_SECRET_KEY no .env (openssl rand -hex 32)}
+      PORT: "8000"
+      # URL pública, com esquema: vira o host dos DSNs e dos links.
+      GLITCHTIP_DOMAIN: ${GLITCHTIP_DOMAIN:-http://localhost:8010}
+      DEFAULT_FROM_EMAIL: ${GLITCHTIP_FROM_EMAIL:-glitchtip@localhost}
+      # shortcut: e-mail só no log do container; trocar por smtp://… para receber alertas.
+      EMAIL_URL: ${GLITCHTIP_EMAIL_URL:-consolemail://}
+      # Só o primeiro usuário se cadastra; os demais são criados no admin.
+      ENABLE_USER_REGISTRATION: "false"
+      CELERY_WORKER_AUTOSCALE: "1,3"
+      CELERY_WORKER_MAX_TASKS_PER_CHILD: "10000"
+    ports:
+      - "${GLITCHTIP_PORT:-8010}:8000"
+    volumes:
+      - ./data/glitchtip:/code/uploads
+    networks:
+      - shared_net
+
   zitadel-api:
     mem_limit: 768m
     memswap_limit: 768m

@@ -21,6 +21,7 @@ Ao final, Postgres, Valkey e SeaweedFS estão no ar e as credenciais admin ficam
 | Valkey    | `infra_valkey`                   | 6379         | `valkey/valkey:8-alpine`    |
 | SeaweedFS | `infra_seaweedfs` (S3)           | 8333         | `chrislusf/seaweedfs:latest`|
 | Keycloak  | `infra_keycloak`                 | 8080         | `quay.io/keycloak/keycloak:26.0` (usa o `infra_postgres`, banco `keycloak`) |
+| GlitchTip | `infra_glitchtip`                | 8010         | `glitchtip/glitchtip` (all-in-one; usa `infra_postgres`, banco `glitchtip`, e `infra_valkey` db 1) |
 | Kong      | `infra_kong`                     | 8000 (proxy), 8001 (admin, só localhost) | `kong:3.8` (DB-less, rotas em `custom/kong/kong.yml`) |
 
 Todos entram na rede Docker externa `shared_net` (criada pelo script se não existir). Apps de outros stacks acessam os serviços pelo nome do container, ex.: `infra_postgres:5432`.
@@ -139,6 +140,24 @@ Por padrão as portas são publicadas em `0.0.0.0` e o Valkey não tem senha. Na
 - firewall: `ufw allow from SEU_IP to any port 5432`; ou
 - bind local no compose: `127.0.0.1:${POSTGRES_PORT:-5432}:5432` (idem Valkey e S3); ou
 - remova `ports:` dos serviços acessados apenas por containers da `shared_net`.
+
+## GlitchTip (telemetria de erros)
+
+Compatível com o SDK do Sentry. Está só no `docker-compose.infra.yml` (o `install-infra.sh` não o sobe). Variáveis `GLITCHTIP_*` no `.env` (ver `.env.example`; `GLITCHTIP_DOMAIN` é a URL pública com esquema, que aparece nos DSNs).
+
+1. Crie o usuário e o banco no Postgres compartilhado (uma vez):
+
+```bash
+set -a; . ./.env; set +a
+docker exec -i infra_postgres psql -U "$POSTGRES_ADMIN_USER" -d postgres <<SQL
+CREATE ROLE "$GLITCHTIP_DB_USER" LOGIN PASSWORD '$GLITCHTIP_DB_PASSWORD';
+CREATE DATABASE "$GLITCHTIP_DB_NAME" OWNER "$GLITCHTIP_DB_USER";
+SQL
+```
+
+2. `docker compose -f docker-compose.infra.yml up -d glitchtip` (as migrations rodam na partida) e abra `http://IP:8010`.
+3. Cadastre o primeiro usuário (depois o cadastro fecha), crie a organização e os projetos `backend` e `app`; o DSN de cada um vai em `SENTRY_DSN` (backends) e `EXPO_PUBLIC_SENTRY_DSN` (app). O DSN usa o host de `GLITCHTIP_DOMAIN`: o celular precisa alcançá-lo.
+4. E-mail sai só no log (`EMAIL_URL=consolemail://`); para receber alertas defina `GLITCHTIP_EMAIL_URL=smtp://…`.
 
 ## Acesso ao S3 (SeaweedFS) com access key
 
